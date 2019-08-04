@@ -1,0 +1,5 @@
+package: github.com/LiboShen/webpage-to-ebook
+import:
+- package: github.com/bmaupin/go-epub
+  version: ^0.5.1
+- package: github.com/go-shiori/go-readability
