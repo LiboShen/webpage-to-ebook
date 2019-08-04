@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -69,8 +71,14 @@ func newEpubHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	port := flag.Int("port", 80, "Which port this server should listen to.")
+	if *port < 0 || *port >= 1<<16 {
+		log.Fatal("--port is invalid")
+	}
+	flag.Parse()
+
 	http.HandleFunc("/epub/new", newEpubHandler)
 
-	fmt.Println("server is running")
-	http.ListenAndServe(":8080", nil)
+	fmt.Printf("server is running at http://0.0.0.0:%d\n", *port)
+	http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 }
