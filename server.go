@@ -1,10 +1,8 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -12,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 	epub "github.com/bmaupin/go-epub"
 	readability "github.com/go-shiori/go-readability"
 )
@@ -45,40 +45,48 @@ func getFileName(title string) string {
 }
 
 func newEpubHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Invalid methed", 400)
-		return
+}
+
+func handler(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	if r.HTTPMethod != "GET" {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 400,
+			Body:       "Invalid methed",
+		}, nil
 	}
-	url, ok := r.URL.Query()["target_url"]
-	if !ok || len(url[0]) < 1 {
-		http.Error(w, "Url parameter 'target_url' is missing", 400)
-		return
+	url := r.QueryStringParameters["target_url"]
+	if url == "" {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 400,
+			Body:       "Url parameter 'target_url' is missing",
+		}, nil
 	}
-	article, err := fetchArticle(url[0])
+	article, err := fetchArticle(url)
 	if err != nil {
-		http.Error(w, "Failed to process web page", 500)
-		return
+		return events.APIGatewayProxyResponse{
+			StatusCode: 500,
+			Body:       "Failed to process web page",
+		}, nil
 	}
 	result, err := createEpub(article)
 	if err != nil {
-		http.Error(w, "Failed to generate epub", 500)
-		return
+		return events.APIGatewayProxyResponse{
+			StatusCode: 500,
+			Body:       "Failed to generate epub",
+		}, nil
 	}
-	w.Header().Set("Content-Disposition",
-		fmt.Sprintf("attachment; filename=\"%s.epub\"", getFileName(article.Title)))
-	w.Header().Set("Content-Type", "application/epub+zip")
-	w.Write(result)
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Content-Disposition": fmt.Sprintf("attachment; filename=\"%s.epub\"", getFileName(article.Title)),
+			"Content-Type":        "application/epub+zip",
+		},
+		Body: string(result),
+	}, nil
 }
 
 func main() {
-	port := flag.Int("port", 80, "Which port this server should listen to.")
-	if *port < 0 || *port >= 1<<16 {
-		log.Fatal("--port is invalid")
-	}
-	flag.Parse()
-
-	http.HandleFunc("/epub/new", newEpubHandler)
-
-	fmt.Printf("server is running at http://0.0.0.0:%d\n", *port)
-	http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
+	// Make the handler available for Remote Procedure Call by AWS Lambda
+	lambda.Start(handler)
 }

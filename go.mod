@@ -3,6 +3,7 @@ module github.com/LiboShen/webpage-to-ebook
 go 1.13
 
 require (
+	github.com/aws/aws-lambda-go v1.23.0
 	github.com/bmaupin/go-epub v0.5.1
 	github.com/go-shiori/go-readability v0.0.0-20190523042835-b940ed0ce329
 	github.com/gofrs/uuid v3.4.0+incompatible
