@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"encoding/base64"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -82,8 +83,8 @@ func handler(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, e
 			"Content-Disposition": fmt.Sprintf("attachment; filename=\"%s.epub\"", getFileName(article.Title)),
 			"Content-Type":        "application/epub+zip",
 		},
-		Body:            string(result),
-		IsBase64Encoded: false,
+		Body:            base64.StdEncoding.EncodeToString(result),
+		IsBase64Encoded: true,
 	}, nil
 }
 
