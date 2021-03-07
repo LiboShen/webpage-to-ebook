@@ -82,7 +82,8 @@ func handler(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, e
 			"Content-Disposition": fmt.Sprintf("attachment; filename=\"%s.epub\"", getFileName(article.Title)),
 			"Content-Type":        "application/epub+zip",
 		},
-		Body: string(result),
+		Body:            string(result),
+		IsBase64Encoded: false,
 	}, nil
 }
 
